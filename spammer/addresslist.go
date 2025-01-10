@@ -148,13 +148,14 @@ func CreateAddresses(N int) ([]string, []string) {
 func Airdrop(config *Config, value *big.Int) error {
 	backend := ethclient.NewClient(config.backend)
 	sender := crypto.PubkeyToAddress(config.faucet.PublicKey)
-	fmt.Printf("Airdrop faucet is at %x\n", sender)
+	fmt.Printf("Airdrop faucet (sender)= %x, amount = %d\n", sender, value)
 	var tx *types.Transaction
 	chainid, err := backend.ChainID(context.Background())
 	if err != nil {
 		fmt.Printf("error getting chain ID; could not airdrop: %v\n", err)
 		return err
 	}
+	//fmt.Printf("Sending airdrop to %d addresses...\n", len(config.keys))
 	for _, addr := range config.keys {
 		nonce, err := backend.PendingNonceAt(context.Background(), sender)
 		if err != nil {
@@ -178,7 +179,7 @@ func Airdrop(config *Config, value *big.Int) error {
 		tx2 := types.NewTransaction(nonce, to, value, gas, gp, nil)
 		signedTx, _ := types.SignTx(tx2, types.LatestSignerForChainID(chainid), config.faucet)
 		if err := backend.SendTransaction(context.Background(), signedTx); err != nil {
-			fmt.Printf("error sending transaction; could not airdrop: %v\n", err)
+			fmt.Printf("error sending transaction; could not airdrop: '%v' for tx: %+v\n", err, tx2)
 			return err
 		}
 		tx = signedTx

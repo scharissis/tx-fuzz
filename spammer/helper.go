@@ -63,6 +63,7 @@ func sendRecurringTx(sk *ecdsa.PrivateKey, backend *ethclient.Client, to common.
 }
 
 func Unstuck(config *Config) error {
+	fmt.Printf("ensuring %d addresses are unstuck...\n", len(config.keys)+1)
 	if err := tryUnstuck(config, config.faucet); err != nil {
 		return err
 	}

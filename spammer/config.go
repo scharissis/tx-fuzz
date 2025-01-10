@@ -34,6 +34,16 @@ type Config struct {
 	mut  *mutator.Mutator // Mutator based on the seed
 }
 
+func (c *Config) WithFaucet(faucet *ecdsa.PrivateKey) *Config {
+	c.faucet = faucet
+	return c
+}
+
+func (c *Config) WithKeys(privateKeys []*ecdsa.PrivateKey) *Config {
+	c.keys = privateKeys
+	return c
+}
+
 func NewDefaultConfig(rpcAddr string, N uint64, accessList bool, rng *rand.Rand) (*Config, error) {
 	// Setup RPC
 	backend, err := rpc.Dial(rpcAddr)

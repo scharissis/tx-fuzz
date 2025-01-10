@@ -68,3 +68,5 @@ func Create(p *program.Program, code []byte, inMemory bool, isCreate2 bool) {
 	}
 	p.Push(size).Push(offset).Push(value).Op(createOp)
 }
+
+func main() {}
