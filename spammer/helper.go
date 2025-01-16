@@ -63,7 +63,7 @@ func sendRecurringTx(sk *ecdsa.PrivateKey, backend *ethclient.Client, to common.
 }
 
 func Unstuck(config *Config) error {
-	fmt.Printf("ensuring %d addresses are unstuck...\n", len(config.keys)+1)
+	config.log.Debug("ensuring %d addresses are unstuck...\n", len(config.keys)+1)
 	if err := tryUnstuck(config, config.faucet); err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func tryUnstuck(config *Config, sk *ecdsa.PrivateKey) error {
 		if noTx > batchSize {
 			noTx = batchSize
 		}
-		fmt.Println("Sending transaction to unstuck account")
+		config.log.Debug("Sending transaction to unstuck account")
 		tx, err := sendRecurringTx(sk, client, addr, big.NewInt(1), noTx)
 		if err != nil {
 			return err
@@ -104,7 +104,7 @@ func tryUnstuck(config *Config, sk *ecdsa.PrivateKey) error {
 			return err
 		}
 	}
-	fmt.Printf("Could not unstuck account %v after 100 tries\n", addr)
+	config.log.Error("Could not unstuck account %v after 100 tries\n", addr)
 	return errors.New("unstuck timed out, please retry manually")
 }
 
@@ -121,7 +121,7 @@ func isStuck(config *Config, account common.Address) (uint64, error) {
 	}
 
 	if pendingNonce != nonce {
-		fmt.Printf("Account %v is stuck: pendingNonce: %v currentNonce: %v, missing nonces: %v\n", account, pendingNonce, nonce, pendingNonce-nonce)
+		config.log.Debug("Account %v is stuck: pendingNonce: %v currentNonce: %v, missing nonces: %v\n", account, pendingNonce, nonce, pendingNonce-nonce)
 		return pendingNonce - nonce, nil
 	}
 	return 0, nil

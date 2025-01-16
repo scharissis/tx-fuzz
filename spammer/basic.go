@@ -3,7 +3,6 @@ package spammer
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -53,7 +52,7 @@ func SendBasicTransactions(config *Config, key *ecdsa.PrivateKey, f *filler.Fill
 		ctx, cancel := context.WithTimeout(context.Background(), TX_TIMEOUT)
 		defer cancel()
 		if _, err := bind.WaitMined(ctx, backend, lastTx); err != nil {
-			fmt.Printf("Waiting for transactions to be mined failed: %v\n", err.Error())
+			config.log.Error("Waiting for transactions to be mined failed: %v\n", err.Error())
 		}
 	}
 	return nil

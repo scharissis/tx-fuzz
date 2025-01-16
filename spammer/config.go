@@ -15,11 +15,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli/v2"
 )
 
 type Config struct {
+	log     log.Logger
 	backend *rpc.Client // connection to the rpc provider
 
 	N          uint64              // number of transactions send per account
@@ -44,7 +46,14 @@ func (c *Config) WithKeys(privateKeys []*ecdsa.PrivateKey) *Config {
 	return c
 }
 
+func (c *Config) WithLogger(logger log.Logger) *Config {
+	c.log = logger
+	return c
+}
+
 func NewDefaultConfig(rpcAddr string, N uint64, accessList bool, rng *rand.Rand) (*Config, error) {
+	log := log.New()
+
 	// Setup RPC
 	backend, err := rpc.Dial(rpcAddr)
 	if err != nil {
@@ -58,6 +67,7 @@ func NewDefaultConfig(rpcAddr string, N uint64, accessList bool, rng *rand.Rand)
 	}
 
 	return &Config{
+		log:        log,
 		backend:    backend,
 		N:          N,
 		faucet:     crypto.ToECDSAUnsafe(common.FromHex(txfuzz.SK)),
@@ -71,6 +81,7 @@ func NewDefaultConfig(rpcAddr string, N uint64, accessList bool, rng *rand.Rand)
 }
 
 func NewConfigFromContext(c *cli.Context) (*Config, error) {
+	log := log.New()
 	// Setup RPC
 	rpcAddr := c.String(flags.RpcFlag.Name)
 	backend, err := rpc.Dial(rpcAddr)
@@ -91,7 +102,7 @@ func NewConfigFromContext(c *cli.Context) (*Config, error) {
 	var keys []*ecdsa.PrivateKey
 	nKeys := c.Int(flags.CountFlag.Name)
 	if nKeys == 0 || nKeys > len(staticKeys) {
-		fmt.Printf("Sanitizing count flag from %v to %v\n", nKeys, len(staticKeys))
+		log.Info("Sanitizing count flag from %v to %v\n", nKeys, len(staticKeys))
 		nKeys = len(staticKeys)
 	}
 	for i := 0; i < nKeys; i++ {
@@ -115,7 +126,7 @@ func NewConfigFromContext(c *cli.Context) (*Config, error) {
 	// Setup seed
 	seed := c.Int64(flags.SeedFlag.Name)
 	if seed == 0 {
-		fmt.Println("No seed provided, creating one")
+		log.Info("No seed provided, creating one")
 		rnd := make([]byte, 8)
 		crand.Read(rnd)
 		seed = int64(binary.BigEndian.Uint64(rnd))
@@ -134,6 +145,7 @@ func NewConfigFromContext(c *cli.Context) (*Config, error) {
 	}
 
 	return &Config{
+		log:        log,
 		backend:    backend,
 		N:          uint64(N),
 		faucet:     faucet,

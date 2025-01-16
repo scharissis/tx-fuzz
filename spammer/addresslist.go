@@ -2,7 +2,6 @@ package spammer
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
@@ -148,18 +146,18 @@ func CreateAddresses(N int) ([]string, []string) {
 func Airdrop(config *Config, value *big.Int) error {
 	backend := ethclient.NewClient(config.backend)
 	sender := crypto.PubkeyToAddress(config.faucet.PublicKey)
-	fmt.Printf("Airdrop faucet (sender)= %x, amount = %d\n", sender, value)
+	config.log.Debug("Airdrop faucet (sender)= %x, amount = %d\n", sender, value)
 	var tx *types.Transaction
 	chainid, err := backend.ChainID(context.Background())
 	if err != nil {
-		fmt.Printf("error getting chain ID; could not airdrop: %v\n", err)
+		config.log.Error("error getting chain ID; could not airdrop: %v\n", err)
 		return err
 	}
-	//fmt.Printf("Sending airdrop to %d addresses...\n", len(config.keys))
+	config.log.Debug("Sending airdrop to %d addresses...\n", len(config.keys))
 	for _, addr := range config.keys {
 		nonce, err := backend.PendingNonceAt(context.Background(), sender)
 		if err != nil {
-			fmt.Printf("error getting pending nonce; could not airdrop: %v\n", err)
+			config.log.Error("error getting pending nonce; could not airdrop: %v\n", err)
 			return err
 		}
 		to := crypto.PubkeyToAddress(addr.PublicKey)
@@ -173,13 +171,13 @@ func Airdrop(config *Config, value *big.Int) error {
 			Data:     nil,
 		})
 		if err != nil {
-			log.Error("error estimating gas: %v", err)
+			config.log.Error("error estimating gas: %v", err)
 			return err
 		}
 		tx2 := types.NewTransaction(nonce, to, value, gas, gp, nil)
 		signedTx, _ := types.SignTx(tx2, types.LatestSignerForChainID(chainid), config.faucet)
 		if err := backend.SendTransaction(context.Background(), signedTx); err != nil {
-			fmt.Printf("error sending transaction; could not airdrop: '%v' for tx: %+v\n", err, tx2)
+			config.log.Error("error sending transaction; could not airdrop: '%v' for tx: %+v\n", err, tx2)
 			return err
 		}
 		tx = signedTx
